@@ -27,17 +27,36 @@ CorrelatedReportConfig = {
          */
         $('input[name=secondary-instrument]').change(function () {
             var $element = $(this);
-            CorrelatedReportConfig.getInstrumentFields($element.data('key'));
+            if ($element.prop('checked') == true) {
+                CorrelatedReportConfig.getInstrumentFields($element.data('key'), false);
+            } else {
+                CorrelatedReportConfig.removeInstrumentFields($element.data('key'));
+            }
+        });
+
+        /**
+         * if you check instrument lets load all its fields as checkboxes to select report headers.
+         */
+        $('#primary-instrument').change(function () {
+            var $element = $(this);
+            CorrelatedReportConfig.getInstrumentFields($element.find(":selected").val(), true);
         });
     },
-    getInstrumentFields: function (key) {
+    removeInstrumentFields: function (key) {
+        $("#" + key + '-fields').remove();
+    },
+    getInstrumentFields: function (key, primary) {
         $.ajax({
             url: $("#instrument-fields").val(),
-            data: {key: key, redcap_csrf_token: $("#redcap_csrf_token").val()},
+            data: {key: key, primary: primary, redcap_csrf_token: $("#redcap_csrf_token").val()},
             type: 'POST',
             success: function (data) {
-                element.append(data);
-                //TODO APPEND DELETE BUTTON
+                if (primary) {
+                    $('#primary-fields').html(data);
+                } else {
+                    $('#instruments-fields').append(data);
+                }
+
             },
             error: function (request, error) {
                 alert("Request: " + JSON.stringify(request));

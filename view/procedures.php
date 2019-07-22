@@ -12,10 +12,16 @@ use \REDCap;
     $instruments = REDCap::getInstrumentNames();
     ?>
     <h4>Primary Instrument</h4>
-    <select name="primary_instrument" id="primary_instrument" class="custom-select" required>
+    <select name="primary-instrument" id="primary-instrument" class="custom-select" required>
         <option value="">Select Instrument</option>
         <?php
         foreach ($instruments as $key => $instrument) {
+            /**
+             * if not repeated then we do not want it here
+             */
+            if (!$module->isRepeatingForm($key)) {
+                continue;
+            }
             ?>
             <option value="<?php echo $key ?>"><?php echo $instrument ?></option>
             <?php
@@ -36,6 +42,12 @@ use \REDCap;
         <tbody>
         <?php
         foreach ($instruments as $key => $instrument) {
+            /**
+             * if not repeated then we do not want it here
+             */
+            if (!$module->isRepeatingForm($key)) {
+                continue;
+            }
             ?>
             <tr>
                 <th scope="row"><input type="checkbox" data-key="<?php echo $key ?>" value=""
@@ -43,9 +55,9 @@ use \REDCap;
                 <td><?php echo $instrument ?></td>
                 <td>
                     <select name="closest-type-<?php echo $key ?>" id="closest-type-<?php echo $key ?>">
-                        <option>Closest</option>
-                        <option>Closest Before <=</option>
-                        <option>Closest After >=</option>
+                        <option value="c">Closest</option>
+                        <option value="<=">Closest Before <=</option>
+                        <option value=">=">Closest After >=</option>
                     </select>
                 </td>
                 <td><input type="text" name="closest-value-<?php echo $key ?>" id="closest-value-<?php echo $key ?>"/>

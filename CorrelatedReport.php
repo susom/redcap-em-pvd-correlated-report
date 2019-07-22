@@ -9,6 +9,8 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
     private $project;
 
+
+    private $eventId;
     /**
      * IhabModule constructor.
      */
@@ -20,10 +22,27 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
             if (isset($_GET['pid'])) {
                 $this->setProject(new \Project(filter_var($_GET['pid'], FILTER_SANITIZE_NUMBER_INT)));
             }
+            $this->setEventId($this->getFirstEventId());
         } catch (\Exception $e) {
             echo $e->getMessage();
         }
 
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getEventId()
+    {
+        return $this->eventId;
+    }
+
+    /**
+     * @param mixed $eventId
+     */
+    public function setEventId($eventId)
+    {
+        $this->eventId = $eventId;
     }
 
     /**
@@ -40,5 +59,16 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
     public function setProject($project)
     {
         $this->project = $project;
+        $this->setRepeatingFormsEvents();
+    }
+
+    private function setRepeatingFormsEvents()
+    {
+        $this->project->setRepeatingFormsEvents();
+    }
+
+    public function isRepeatingForm($key)
+    {
+        return $this->getProject()->isRepeatingForm($this->getEventId(), $key);
     }
 }

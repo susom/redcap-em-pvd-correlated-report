@@ -20,16 +20,24 @@
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <style>
+        body {
+            word-wrap: break-word;
+        }
+    </style>
 </head>
 <body>
 
 <div id="app" class="container">
     <input type="hidden" name="base-url" id="base-url"
-           value="<?php echo SERVER_NAME . APP_PATH_WEBROOT . 'DataExport/report_filter_ajax.php?pid=' . PROJECT_ID ?>">
+           value="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . SERVER_NAME . APP_PATH_WEBROOT . 'DataExport/report_filter_ajax.php?pid=' . PROJECT_ID ?>">
     <input type="hidden" name="instrument-fields" id="instrument-fields"
            value="<?php echo $module->getUrl("ajax/fields.php") ?>">
     <input type="hidden" name="redcap_csrf_token" id="redcap_csrf_token" value="<?php echo System::getCsrfToken() ?>">
-    <div class="row">
+    <div class="row p-1">
+        <h1>PVD Report</h1>
+    </div>
+    <div class="row p-1">
         <div class="col-lg-4">
             <?php
             require_once($module->getModulePath() . "view/instruments.php");
@@ -37,18 +45,28 @@
         </div>
         <div class="col-lg-8">
             <form name="correlated-report" id="correlated-report">
-                <div class="row">
+                <div class="row p-1">
                     <?php
                     require_once($module->getModulePath() . "view/filters.php");
                     ?>
                 </div>
-                <div class="row">
+                <div class="row p-1">
                     <?php
                     require_once($module->getModulePath() . "view/procedures.php");
                     ?>
                 </div>
-                <div class="row">D</div>
-                <div class="row">E</div>
+                <div class="row p-1">
+                    <?php
+                    require_once($module->getModulePath() . "view/fields.php");
+                    ?>
+                </div>
+                <div class="row p-1">
+                    <div class="col text-center">
+                        <button type="submit" name="correlated-report-submit" class="btn btn-primary"
+                                id="correlated-report-submit">Generate
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>

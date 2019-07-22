@@ -8,11 +8,18 @@ use \REDCap;
 
 ?>
 <div class="accordion" id="accordionExample">
+    <h2>Search Criteria</h2>
     <?php
     $instruments = REDCap::getInstrumentNames();
+    $event = $module->getFirstEventId();
     foreach ($instruments as $key => $instrument) {
 
-        //TODO check if instrument is repeatable.
+        /**
+         * if not repeated then we do not want it here
+         */
+        if (!$module->isRepeatingForm($key)) {
+            continue;
+        }
         ?>
         <div class="card">
             <div class="card-header" id="<?php echo $key ?>-parent">
