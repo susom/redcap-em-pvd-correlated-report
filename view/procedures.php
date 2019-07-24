@@ -50,7 +50,7 @@ use \REDCap;
             }
             ?>
             <tr>
-                <th scope="row"><input type="checkbox" data-key="<?php echo $key ?>" value=""
+                <th scope="row"><input type="checkbox" data-key="<?php echo $key ?>" value="<?php echo $key ?>"
                                        name="secondary-instrument"></th>
                 <td><?php echo $instrument ?></td>
                 <td>

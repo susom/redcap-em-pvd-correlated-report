@@ -41,6 +41,31 @@ CorrelatedReportConfig = {
             var $element = $(this);
             CorrelatedReportConfig.getInstrumentFields($element.find(":selected").val(), true);
         });
+
+
+        /**
+         * submit form
+         */
+        $("#correlated-report-submit").click(function (e) {
+            e.preventDefault();
+            var data = $("#correlated-report").serializeArray();
+            CorrelatedReportConfig.submitReport(data);
+        });
+    },
+    submitReport: function (data) {
+        console.log(data);
+        $.ajax({
+            url: $("#report-submit").val(),
+            data: data,
+            type: 'POST',
+            success: function (reponse) {
+                console.log(reponse);
+
+            },
+            error: function (request, error) {
+                alert("Request: " + JSON.stringify(request));
+            }
+        });
     },
     removeInstrumentFields: function (key) {
         $("#" + key + '-fields').remove();

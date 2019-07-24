@@ -33,6 +33,8 @@
            value="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' . SERVER_NAME . APP_PATH_WEBROOT . 'DataExport/report_filter_ajax.php?pid=' . PROJECT_ID ?>">
     <input type="hidden" name="instrument-fields" id="instrument-fields"
            value="<?php echo $module->getUrl("ajax/fields.php") ?>">
+    <input type="hidden" name="report-submit" id="report-submit"
+           value="<?php echo $module->getUrl("ajax/submit.php") ?>">
     <input type="hidden" name="redcap_csrf_token" id="redcap_csrf_token" value="<?php echo System::getCsrfToken() ?>">
     <div class="row p-1">
         <h1>PVD Report</h1>
@@ -44,6 +46,7 @@
             ?>
         </div>
         <div class="col-lg-8">
+            <!-- Correlated Report form -->
             <form name="correlated-report" id="correlated-report">
                 <div class="row p-1">
                     <?php
@@ -68,6 +71,7 @@
                     </div>
                 </div>
             </form>
+            <!-- END Correlated Report form -->
         </div>
     </div>
 </div>
