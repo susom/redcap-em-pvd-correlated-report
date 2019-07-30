@@ -53,19 +53,44 @@ CorrelatedReportConfig = {
         });
     },
     submitReport: function (data) {
-        console.log(data);
         $.ajax({
             url: $("#report-submit").val(),
             data: data,
+            timeout: 60000000,
             type: 'POST',
-            success: function (reponse) {
-                console.log(reponse);
-
+            dataType: 'json',
+            success: function (response) {
+                var data = response.data;
+                var columns = response.columns;
+                columns.defaultContent = '';
+                $("#filters-row").slideUp();
+                $('#report-result').DataTable({
+                    dom: 'Bfrtip',
+                    data: data,
+                    columns: CorrelatedReportConfig.prepareTableHeaders(columns),
+                    buttons: [
+                        'copy', 'csv', 'excel', 'pdf', 'print'
+                    ]
+                });
             },
             error: function (request, error) {
                 alert("Request: " + JSON.stringify(request));
             }
         });
+    },
+    prepareTableHeaders: function (columns) {
+        var arr = [];
+        for (var i = 0; i < columns.length; i++) {
+            arr.push(
+                {
+                    data: columns[i],
+                    defaultContent: "<i>Not set</i>",
+                    title: columns[i],
+                }
+            );
+        }
+        return arr;
+        ;
     },
     removeInstrumentFields: function (key) {
         $("#" + key + '-fields').remove();

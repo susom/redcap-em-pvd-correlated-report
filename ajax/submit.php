@@ -25,7 +25,9 @@ try {
     /**
      * verify secondary instruments has all details
      */
+    $module->verifySecondaryInstruments();
 
+    $module->generateReport();
 } catch (\LogicException $e) {
     echo $e->getMessage();
 }

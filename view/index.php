@@ -18,8 +18,18 @@
             integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+    <!-- DataTable Implementation -->
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.flash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.print.min.js"></script>
     <style>
         body {
             word-wrap: break-word;
@@ -39,7 +49,7 @@
     <div class="row p-1">
         <h1>PVD Report</h1>
     </div>
-    <div class="row p-1">
+    <div id="filters-row" class="row p-1">
         <div class="col-lg-4">
             <?php
             require_once($module->getModulePath() . "view/instruments.php");
@@ -73,6 +83,10 @@
             </form>
             <!-- END Correlated Report form -->
         </div>
+    </div>
+    <div class="row p-1">
+        <table id="report-result" class="display table table-striped table-bordered"
+               cellspacing="0" width="100%"></table>
     </div>
 </div>
 
