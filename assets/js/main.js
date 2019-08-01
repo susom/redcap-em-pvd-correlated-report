@@ -7,8 +7,12 @@ CorrelatedReportConfig = {
             connectWith: ".connectedSortable",
             stop: function (event, ui) {
                 var $element = $(ui.item[0]);
-                var type = $element.data('type');
-                CorrelatedReportConfig.appendInputs($element, type);
+            },
+            remove: function (event, ui) {
+                var $newELem = ui.item.clone();
+                CorrelatedReportConfig.appendInputs($newELem);
+                $newELem.appendTo('.filters-fields');
+                $(this).sortable('cancel');
             }
         });
 
@@ -25,7 +29,7 @@ CorrelatedReportConfig = {
         /**
          * if you check instrument lets load all its fields as checkboxes to select report headers.
          */
-        $('input[name=secondary-instrument]').change(function () {
+        $('.secondary-instrument').change(function () {
             var $element = $(this);
             if ($element.prop('checked') == true) {
                 CorrelatedReportConfig.getInstrumentFields($element.data('key'), false);
@@ -60,6 +64,7 @@ CorrelatedReportConfig = {
             type: 'POST',
             dataType: 'json',
             success: function (response) {
+
                 var data = response.data;
                 var columns = response.columns;
                 columns.defaultContent = '';
@@ -113,12 +118,13 @@ CorrelatedReportConfig = {
             }
         });
     },
-    appendInputs: function (element, type) {
+    appendInputs: function (element) {
         $.ajax({
             url: $("#base-url").val(),
-            data: {field_name: element.text(), redcap_csrf_token: $("#redcap_csrf_token").val()},
+            data: {field_name: element.data('field'), redcap_csrf_token: $("#redcap_csrf_token").val()},
             type: 'POST',
             success: function (data) {
+                data = ' ' + data + CorrelatedReportConfig.appendContactInput();
                 element.append(data);
                 //TODO APPEND DELETE BUTTON
             },
@@ -126,6 +132,9 @@ CorrelatedReportConfig = {
                 alert("Request: " + JSON.stringify(request));
             }
         });
+    },
+    appendContactInput: function () {
+        return '<select name="limiter_connector[]"><option value="AND">AND</option><option value="OR">OR</option></select>'
     }
 };
 

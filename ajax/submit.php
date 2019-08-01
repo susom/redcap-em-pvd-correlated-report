@@ -22,10 +22,6 @@ try {
      */
     $module->classifyInputs();
 
-    /**
-     * verify secondary instruments has all details
-     */
-    $module->verifySecondaryInstruments();
 
     $module->generateReport();
 } catch (\LogicException $e) {

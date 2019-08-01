@@ -14,12 +14,6 @@ use \REDCap;
     $event = $module->getFirstEventId();
     foreach ($instruments as $key => $instrument) {
 
-        /**
-         * if not repeated then we do not want it here
-         */
-        if (!$module->isRepeatingForm($key)) {
-            continue;
-        }
         ?>
         <div class="card">
             <div class="card-header" id="<?php echo $key ?>-parent">
@@ -40,7 +34,10 @@ use \REDCap;
                         foreach ($fields as $field) {
                             ?>
                             <li class="list-group-item" data-instrument="<?php echo $key ?>"
-                                data-type="<?php echo REDCap::getFieldType($field) ?>"><?php echo $field ?></li>
+                                data-field="<?php echo $field ?>"
+                                data-type="<?php echo REDCap::getFieldType($field) ?>"><?php echo $field ?>
+                                <input type="hidden" name="limiter_name[]" value="<?php echo $field ?>">
+                            </li>
                             <?php
                         }
                         ?>

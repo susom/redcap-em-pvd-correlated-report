@@ -14,6 +14,7 @@ define('PRIMARY_INSTRUMENT', 'primary-instrument');
 define('SECONDARY_INSTRUMENT', 'secondary-instrument');
 define('CLOSEST', 'closest');
 define('FIELD', 'field');
+define('LIMITER', 'limiter');
 define('PRIMARY_FIELDS', 'primary_fields');
 define('SECONDARY_FIELDS', 'secondary_fields');
 define('ON', 'on');
@@ -33,6 +34,8 @@ define('DATE_IDENTIFIER', 'date_identifier');
  * @property array $primaryData
  * @property \Stanford\Utilities\RepeatingForms $repeatingUtility
  * @property array $representationArray
+ * @property array $patientFilter
+ * @property string $patientFilterText
  */
 class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 {
@@ -50,6 +53,10 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
     private $representationArray = array();
 
+    private $patientFilter = array();
+
+    private $patientFilterText;
+
     /**
      * Map for main instrument date field
      * @var array
@@ -66,6 +73,40 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         'walk' => 'walkdataentry_walk',
         'vqscan' => 'vqscandate_vqscan',
     );
+
+    /**
+     * @return string
+     */
+    public function getPatientFilterText()
+    {
+        return $this->patientFilterText;
+    }
+
+    /**
+     * @param string $patientFilterText
+     */
+    public function setPatientFilterText($patientFilterText)
+    {
+        $this->patientFilterText = $patientFilterText;
+    }
+
+
+    /**
+     * @return mixed
+     */
+    public function getPatientFilter()
+    {
+        return $this->patientFilter;
+    }
+
+    /**
+     * @param mixed $patientFilter
+     */
+    public function setPatientFilter($patientFilter)
+    {
+        $this->patientFilter = $patientFilter;
+    }
+
 
     /**
      * CorrelatedReport constructor.
@@ -149,10 +190,110 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
     public function sanitizeInputs()
     {
         foreach ($_POST as $key => $input) {
-            $_POST[$key] = preg_replace('/[^a-zA-Z0-9\=\>\>=\<\<=](.*)$/', '', $_POST[$key]);
+            $_POST[$key] = preg_replace('/[^a-zA-Z0-9\_\=\>\>=\<\<=](.*)$/', '', $_POST[$key]);
         }
     }
 
+    private function defineSecondaryInstrument($input)
+    {
+        if (!isset($this->inputs[SECONDARY_INSTRUMENT][$input]['name'])) {
+            $this->inputs[SECONDARY_INSTRUMENT][$input]['name'] = $input;
+            //load utility for this instrument
+            $this->inputs[SECONDARY_INSTRUMENT][$input][REPEATING_UTILITY] = new RepeatingForms($this->getProject()->project_id,
+                $input);
+
+            //also define main date field for secondary instrument
+            $this->inputs[SECONDARY_INSTRUMENT][$input][DATE_IDENTIFIER] = self::$mainDateField[$input];
+        }
+    }
+
+    /**
+     * @param array $names
+     * @param array $operators
+     * @param array $values
+     * @param array $connectors
+     */
+    private function processPatientFilters($names, $operators, $values, $connectors)
+    {
+        for ($i = 0; $i < count($names); $i++) {
+            //in case there are multiple conditions for same field.
+            $parameters = array('value' => $values[$i], 'operator' => $operators[$i], 'connector' => $connectors[$i]);
+            $this->patientFilter[$names[$i]][] = $parameters;
+        }
+        $this->convertPatientFilterToText();
+    }
+
+    private function convertPatientFilterToText()
+    {
+        $text = '';
+        $header = '';
+        $operator = '';
+        foreach ($this->patientFilter as $name => $field) {
+            //if not the first but change name lets close parentheses
+            if ($header != '' && $header != $name) {
+                $text .= ") " . $operator;
+            }
+            //now if name changed open parentheses and flag header to be name
+            if ($header != $name) {
+                $text .= "(";
+                $header = $name;
+            }
+            $pointer = 0;
+            foreach ($field as $filter) {
+                // this to now we are at the end of internal array to add operator within or after closing parentheses
+                $pointer++;
+                if ($pointer == count($field)) {
+                    $operator = $filter['connector'];
+                    $text .= " [$name]" . $this->processFilterOperation($filter['operator'], $filter['value']);
+                } else {
+                    $text .= " [$name]" . $this->processFilterOperation($filter['operator'],
+                            $filter['value']) . ' ' . $filter['connector'];
+                }
+            }
+        }
+
+        //do not forgot close parentheses for last operator
+        $text .= ")";
+        $this->setPatientFilterText($text);
+    }
+
+    private function processFilterOperation($operator, $value)
+    {
+        switch ($operator) {
+            case 'E':
+                return " = '$value'";
+                break;
+            case 'NE':
+                return " != '$value'";
+                break;
+            case 'LT':
+                return " < '$value'";
+                break;
+            case 'LTE':
+                return " <= '$value'";
+                break;
+            case 'GT':
+                return " > '$value'";
+                break;
+            case 'GTE':
+                return " >= '$value'";
+                break;
+            case 'CONTAINS':
+                return " LIKE '%$value%'";
+                break;
+            case 'NOT_CONTAIN':
+                return " NOT LIKE '%$value%'";
+                break;
+            case 'STARTS_WITH':
+                return " NOT LIKE '$value%'";
+                break;
+            case 'ENDS_WITH':
+                return " NOT LIKE '%$value'";
+                break;
+            default :
+                throw new \LogicException('Operator not identified');
+        }
+    }
     public function classifyInputs()
     {
         foreach ($_POST as $key => $input) {
@@ -165,21 +306,23 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 $this->inputs[PRIMARY_INSTRUMENT][DATE_IDENTIFIER] = self::$mainDateField[$input];
             } //this could be multiple values
             elseif ($key == SECONDARY_INSTRUMENT) {
-                //I added   $input because we still need the type and value per secondary instrument
-                $this->inputs[SECONDARY_INSTRUMENT][$input]['name'] = $input;
-                //load utility for this instrument
-                $this->inputs[SECONDARY_INSTRUMENT][$input][REPEATING_UTILITY] = new RepeatingForms($this->getProject()->project_id,
-                    $input);
-
-                //also define main date field for secondary instrument
-                $this->inputs[SECONDARY_INSTRUMENT][$input][DATE_IDENTIFIER] = self::$mainDateField[$input];
+                $this->defineSecondaryInstrument($input);
             } elseif (strpos($key, CLOSEST) !== false) {
                 $field = explode('-', $key);
                 $name = end($field);
-                if (array_search('value', $field) && is_numeric($input)) {
-                    $this->inputs[SECONDARY_INSTRUMENT][$name]['value'] = $input;
-                } elseif (array_search('type', $field) && in_array($input, array('>=', "<="))) {
-                    $this->inputs[SECONDARY_INSTRUMENT][$name]['type'] = $input;
+                if (array_search('before', $field) && is_numeric($input)) {
+                    $this->inputs[SECONDARY_INSTRUMENT][$name]['before'] = $input;
+                    $this->defineSecondaryInstrument($name);
+                } elseif (array_search('after', $field) && is_numeric($input)) {
+                    $this->inputs[SECONDARY_INSTRUMENT][$name]['after'] = $input;
+                    $this->defineSecondaryInstrument($name);
+                }
+            } elseif (strpos($key, LIMITER) !== false) {
+                if (empty($this->patientFilter)) {
+                    $this->processPatientFilters($_POST['limiter_name'], $_POST['limiter_operator'],
+                        $_POST['limiter_value'], $_POST['limiter_connector']);
+                } else {
+                    continue;
                 }
             } elseif (preg_match('/' . FIELD . '$/', $key) && $input == ON) {
                 //remove the last part of string
@@ -198,31 +341,12 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         }
     }
 
-    public function verifySecondaryInstruments()
-    {
-        if (isset($this->inputs[SECONDARY_INSTRUMENT])) {
-            foreach ($this->inputs[SECONDARY_INSTRUMENT] as $key => $input) {
-                //array does not have correct number of elements
-                if (count($input) != 5) {
-                    throw new \LogicException("$key does not have correct information");
-                } elseif (!isset($input['name'])) {
-                    throw new \LogicException("$key missing name element");
-                } elseif (!isset($input['value'])) {
-                    throw new \LogicException("$key missing value element");
-                } elseif (!isset($input['type'])) {
-                    throw new \LogicException("$key missing type element");
-                }
-            }
-        } else {
-            return true;
-        }
-    }
-
     private function getPrimaryInstrumentsData()
     {
 
         //TODO process filters now we will consider all records
         $param = array(
+            'filterLogic' => $this->getPatientFilterText(),
             'fields' => $this->inputs[PRIMARY_FIELDS],
             'return_format' => 'array',
         );
@@ -303,17 +427,17 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         } else {
             $this->representationArray['columns'] = array_merge($keys, $this->representationArray['columns']);
             //make sure no duplication
-            $this->representationArray['columns'] = array_unique($this->representationArray['columns']);
+            $this->representationArray['columns'] = array_values(array_unique($this->representationArray['columns']));
         }
     }
 
     private function getSecondaryInstrumentData($date, $instrument, $recordId)
     {
         $dateField = $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']][DATE_IDENTIFIER];
-        $operation = $instrument['type'];
-
+        //is secondary instrument data not loaded yet load it now for one time.
         if (!isset($this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'])) {
             $param = array(
+                //'filterLogic' => $this->getPatientFilterText(),
                 'fields' => $this->inputs[SECONDARY_FIELDS][$instrument['name']],
                 'return_format' => 'array',
             );
@@ -321,31 +445,45 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         }
 
         $result = array();
-        list($start, $end) = $this->processSecondaryTimeFilter($operation, $date, $instrument['value']);
+        $timeFilters = $this->processSecondaryTimeFilter($date, $instrument);
         //get from secondary the records for id we passed
         $records = $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId]['repeat_instances'][$this->getFirstEventId()][$instrument['name']];
 
         foreach ($records as $record) {
-            if (strtotime($record[$dateField]) >= strtotime($start) && strtotime($record[$dateField]) <= strtotime($end)) {
-                $result[] = $record;
+            //now loop over before/after time filters for secondary records
+            foreach ($timeFilters as $filter) {
+                if (strtotime($record[$dateField]) >= strtotime($filter['start']) && strtotime($record[$dateField]) <= strtotime($filter['end'])) {
+                    $result[] = $record;
+                }
             }
         }
         return $result;
     }
 
-
-    private function processSecondaryTimeFilter($operation, $date, $value)
+    /**
+     * define the secondary instrument date search criteria.
+     * @param string $date
+     * @param array $instrument
+     * @return array
+     */
+    private function processSecondaryTimeFilter($date, $instrument)
     {
-        if ($operation == '>=') {
-            $time = strtotime($date) + $value * 24 * 60 * 60;
-            return array(date('Y-m-d H:i:s', strtotime($date)), date('Y-m-d H:i:s', $time));
-        } elseif ($operation == '<=') {
-            $time = strtotime($date) - $value * 24 * 60 * 60;
-            return array(date('Y-m-d H:i:s', $time), date('Y-m-d H:i:s', strtotime($date)));
-
-        } else {
-            throw new \LogicException('Unknown operation');
+        $result = array();
+        if (isset($instrument['before'])) {
+            $time = strtotime($date) - $instrument['before'] * 24 * 60 * 60;
+            $result['before'] = array(
+                'start' => date('Y-m-d H:i:s', $time),
+                'end' => date('Y-m-d H:i:s', strtotime($date))
+            );
         }
+        if (isset($instrument['after'])) {
+            $time = strtotime($date) + $instrument['after'] * 24 * 60 * 60;
+            $result['after'] = array(
+                'start' => date('Y-m-d H:i:s', strtotime($date)),
+                'end' => date('Y-m-d H:i:s', $time)
+            );
+        }
+        return $result;
     }
 
 
@@ -353,14 +491,25 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
     {
         $this->getPrimaryInstrumentsData();
         //TODO check if secondary instrument required before process
-        $this->processSecondaryInstrumentsData();
+        if (isset($this->inputs[SECONDARY_INSTRUMENT])) {
+            $this->processSecondaryInstrumentsData();
+            //finally display content
+            $this->displayContent();
+        } else {
 
-        //finally display content
-        $this->displayContent();
+            $this->representationArray['data'] = $this->primaryData;
+            //finally display content
+            $this->displayContent();
+        }
+
+
     }
 
     private function displayContent()
     {
-        echo json_encode($this->representationArray);
+        $output = gzencode(json_encode($this->representationArray), 9, FORCE_GZIP);
+        header("Content-type: text/javascript");
+        header('Content-Encoding: gzip');
+        echo $output;
     }
 }

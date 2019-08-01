@@ -35,8 +35,8 @@ use \REDCap;
         <tr>
             <th scope="col">Select</th>
             <th scope="col">Name</th>
-            <th scope="col">Closest Type</th>
-            <th scope="col">Days</th>
+            <th scope="col">After/Days</th>
+            <th scope="col">Before/Days</th>
         </tr>
         </thead>
         <tbody>
@@ -51,16 +51,13 @@ use \REDCap;
             ?>
             <tr>
                 <th scope="row"><input type="checkbox" data-key="<?php echo $key ?>" value="<?php echo $key ?>"
-                                       name="secondary-instrument"></th>
+                                       class="secondary-instrument" name="secondary-instrument[]"></th>
                 <td><?php echo $instrument ?></td>
                 <td>
-                    <select name="closest-type-<?php echo $key ?>" id="closest-type-<?php echo $key ?>">
-                        <option value="c">Closest</option>
-                        <option value="<=">Closest Before <=</option>
-                        <option value=">=">Closest After >=</option>
-                    </select>
+                    <input type="text" name="closest-after-<?php echo $key ?>" id="closest-after-<?php echo $key ?>"/>
                 </td>
-                <td><input type="text" name="closest-value-<?php echo $key ?>" id="closest-value-<?php echo $key ?>"/>
+                <td>
+                    <input type="text" name="closest-before-<?php echo $key ?>" id="closest-before-<?php echo $key ?>"/>
                 </td>
             </tr>
             <?php
