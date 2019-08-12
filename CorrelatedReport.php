@@ -12,6 +12,7 @@ use \Stanford\Utilities\RepeatingForms;
 
 define('PRIMARY_INSTRUMENT', 'primary-instrument');
 define('SECONDARY_INSTRUMENT', 'secondary-instrument');
+define('DATATABLE_PAGE', 'datatable-page');
 define('CLOSEST', 'closest');
 define('FIELD', 'field');
 define('LIMITER', 'limiter');
@@ -20,6 +21,7 @@ define('SECONDARY_FIELDS', 'secondary_fields');
 define('ON', 'on');
 define('OFF', 'off');
 define('REPEATING_UTILITY', 'repeating_utility');
+define('ROWS_PER_CALL', 1000);
 /**
  * this to save date field which will be used to filter data for secondary instruments.
  */
@@ -36,6 +38,8 @@ define('DATE_IDENTIFIER', 'date_identifier');
  * @property array $representationArray
  * @property array $patientFilter
  * @property string $patientFilterText
+ * @property int $currentPageNumber
+ * @property array $dataDictionary
  */
 class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 {
@@ -57,6 +61,9 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
     private $patientFilterText;
 
+    private $currentPageNumber;
+
+    private $dataDictionary = array();
     /**
      * Map for main instrument date field
      * @var array
@@ -74,6 +81,50 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         'vqscan' => 'vqscandate_vqscan',
     );
 
+
+    /**
+     * CorrelatedReport constructor.
+     */
+    public function __construct()
+    {
+        parent::__construct();
+
+        try {
+            if (isset($_GET['pid'])) {
+                $this->setProject(new \Project(filter_var($_GET['pid'], FILTER_SANITIZE_NUMBER_INT)));
+            }
+            $this->setEventId($this->getFirstEventId());
+
+            $this->setDataDictionary(REDCap::getDataDictionary($this->getProject()->project_id, 'array'));
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+        }
+
+    }
+
+    /**
+     * @return array
+     */
+    public function getDataDictionary()
+    {
+        return $this->dataDictionary;
+    }
+
+    /**
+     * @param array $dataDictionary
+     */
+    public function setDataDictionary($dataDictionary)
+    {
+        $this->dataDictionary = $dataDictionary;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDataDictionaryProp($prop)
+    {
+        return $this->dataDictionary[$prop];
+    }
     /**
      * @return string
      */
@@ -90,6 +141,21 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         $this->patientFilterText = $patientFilterText;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getCurrentPageNumber()
+    {
+        return $this->currentPageNumber;
+    }
+
+    /**
+     * @param mixed $currentPageNumber
+     */
+    public function setCurrentPageNumber($currentPageNumber)
+    {
+        $this->currentPageNumber = $currentPageNumber;
+    }
 
     /**
      * @return mixed
@@ -105,26 +171,6 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
     public function setPatientFilter($patientFilter)
     {
         $this->patientFilter = $patientFilter;
-    }
-
-
-    /**
-     * CorrelatedReport constructor.
-     */
-    public function __construct()
-    {
-        parent::__construct();
-
-        try {
-            if (isset($_GET['pid'])) {
-                $this->setProject(new \Project(filter_var($_GET['pid'], FILTER_SANITIZE_NUMBER_INT)));
-
-            }
-            $this->setEventId($this->getFirstEventId());
-        } catch (\Exception $e) {
-            echo $e->getMessage();
-        }
-
     }
 
     /**
@@ -335,6 +381,8 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                     $instrumentName = explode('_', $key);
                     $this->inputs[SECONDARY_FIELDS][end($instrumentName)][] = $key;
                 }
+            } elseif ($key == DATATABLE_PAGE) {
+                $this->setCurrentPageNumber($input);
             } else {
                 throw new \LogicException('cant define input type');
             }
@@ -352,6 +400,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         );
         $data = REDCap::getData($param);
 
+
         foreach ($data as $id => $record) {
             /**
              * if record has not data ignore
@@ -364,7 +413,6 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 //TODO add demographic data to the array
                 //$this->primaryData[$id]['demographics'] = $this->getRecordDataViaSecondaryFilter($id);
             }
-
         }
     }
 
@@ -388,13 +436,17 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                         //now lets flatten the final row for representation
                         foreach ($secondary as $row) {
                             $temp = array_merge($this->primaryData[$id]['primary'][$key], $row);
-                            $this->representationArray['data'][] = $this->flattenArray($temp);
+                            //get columns first so we can delete no needed based on the values.
                             $this->saveArrayColumns(array_keys($temp));
+                            $this->representationArray['data'][] = $this->flattenArray($temp);
+
                         }
                     } else {
+                        //get columns first so we can delete no needed based on the values.
+                        $this->saveArrayColumns(array_keys($this->primaryData[$id]['primary'][$key]));
                         //push primary to representation array
                         $this->representationArray['data'][] = $this->flattenArray($this->primaryData[$id]['primary'][$key]);
-                        $this->saveArrayColumns(array_keys($this->primaryData[$id]['primary'][$key]));
+
                     }
 
                 }
@@ -402,24 +454,71 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         }
     }
 
+    /**
+     * @param $array
+     * @return mixed
+     */
     private function flattenArray($array)
     {
-        foreach ($array as $key => $el) {
-            if (is_array($el)) {
-                $tempArr = array();
-                array_walk_recursive($el, 'childArray', $tempArr);
-                //todo get the option values
-                $array[$key] = '';
+        foreach ($array as $field => $el) {
+            //check if element type from DataDictionary is checkbox or dropdown then get value label instead
+            $prop = $this->getDataDictionaryProp($field);
+
+            //if not defined in data dictionary then do not display it.
+            if (is_null($prop)) {
+                unset($array[$field]);
             }
+
+            //if dropdown or checkbox get the label instead of numeric value.
+            if ($prop['field_type'] == 'checkbox' || $prop['field_type'] == 'dropdown') {
+                $array[$field] = $this->getValueLabel($el, $prop);
+            }
+
+            //change columns labels
+            $value = $array[$field];
+            $key = array_search($field, $this->representationArray['columns']);
+            unset($this->representationArray['columns'][$key]);
+            unset($array[$field]);
+            $array[$prop['field_label']] = $value;
+            $this->representationArray['columns'][] = $prop['field_label'];
         }
         return $array;
     }
 
-    function childArray($item, $key)
+    private function getValueLabel($value, $prop)
     {
-        return "$key: $item\n";
+        $group = $prop['select_choices_or_calculations'];
+        $choices = explode('|', $group);
+        $result = '';
+        foreach ($choices as $choice) {
+            $components = explode(",", $choice);
+            if ($prop['field_type'] == 'checkbox') {
+                foreach ($value as $k => $v) {
+                    //make sure the option selected is same as in the loop
+                    if ($k != $components[0]) {
+                        continue;
+                    }
+                    //checkbox is checked
+                    if ($v == "1") {
+                        $result .= ' ' . end($components) . ' => Yes,';
+                    } else {
+                        $result .= ' ' . end($components) . ' => No,';
+                    }
+                }
+                $result = ltrim($result, ",");
+            } else {
+                if ($value == $components[0]) {
+                    $result = end($components);
+                }
+            }
+        }
+        return $result;
     }
 
+    /**
+     * this function will make sure columns $representationArray is up to date
+     * @param array $keys
+     */
     private function saveArrayColumns($keys)
     {
         if (!isset($this->representationArray['columns'])) {
@@ -427,10 +526,18 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         } else {
             $this->representationArray['columns'] = array_merge($keys, $this->representationArray['columns']);
             //make sure no duplication
-            $this->representationArray['columns'] = array_values(array_unique($this->representationArray['columns']));
+            $this->cleanColumns();
         }
+        $this->setRecordIdFirst();
     }
 
+    /**
+     * get associated secondary instrument data for specific record id
+     * @param string $date
+     * @param string $instrument
+     * @param int $recordId
+     * @return array
+     */
     private function getSecondaryInstrumentData($date, $instrument, $recordId)
     {
         $dateField = $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']][DATE_IDENTIFIER];
@@ -487,10 +594,13 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
     }
 
 
+    /**
+     * process primary and secondary instruments
+     */
     public function generateReport()
     {
         $this->getPrimaryInstrumentsData();
-        //TODO check if secondary instrument required before process
+
         if (isset($this->inputs[SECONDARY_INSTRUMENT])) {
             $this->processSecondaryInstrumentsData();
             //finally display content
@@ -501,15 +611,62 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
             //finally display content
             $this->displayContent();
         }
-
-
     }
 
+    /**
+     * compress and display json of  $representationArray
+     */
     private function displayContent()
     {
-        $output = gzencode(json_encode($this->representationArray), 9, FORCE_GZIP);
-        header("Content-type: text/javascript");
-        header('Content-Encoding: gzip');
+        $supportsGzip = strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false;
+
+        //clean for last time for before display
+        $this->cleanColumns();
+
+
+        if ($supportsGzip) {
+            $output = gzencode(trim(preg_replace('/\s+/', ' ',
+                json_encode($this->representationArray, JSON_UNESCAPED_UNICODE))), 9);
+            header("content-encoding: gzip");
+            ob_start("ob_gzhandler");
+        } else {
+            $output = json_encode($this->representationArray);
+        }
+        $offset = 60 * 60;
+        $expire = "expires: " . gmdate("D, d M Y H:i:s", time() + $offset) . " GMT";
+        header("content-type: application/json");
+        header("cache-control: must-revalidate");
+        header($expire);
+        header('Content-Length: ' . strlen($output));
+        header('Vary: Accept-Encoding');
         echo $output;
+        ob_end_flush();
+    }
+
+    /**
+     * split data array based on requested page.
+     */
+    private function paginateContent()
+    {
+        if (count($this->representationArray['data']) > ROWS_PER_CALL) {
+            $this->representationArray['data'] = array_slice($this->representationArray['data'],
+                (int)($this->getCurrentPageNumber() - 1) * ROWS_PER_CALL, ROWS_PER_CALL, true);
+        }
+    }
+
+
+    /**
+     * manipulate columns array to make record_id first
+     */
+    private function setRecordIdFirst()
+    {
+        $key = array_search('Record ID', $this->representationArray['columns']);
+        unset($this->representationArray['columns'][$key]);
+        array_unshift($this->representationArray['columns'], 'Record ID');
+    }
+
+    private function cleanColumns()
+    {
+        $this->representationArray['columns'] = array_values(array_unique($this->representationArray['columns']));
     }
 }
