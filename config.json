@@ -13,7 +13,7 @@
     "project": [
       {
         "name": "Main Report Page",
-        "icon": "brick",
+        "icon": "report",
         "url": "view/index.php",
         "show-header-and-footer": false
       }
