@@ -469,6 +469,12 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 unset($array[$field]);
             }
 
+            if (is_null($el) || $field == '') {
+                unset($array[$field]);
+                $key = array_search($field, $this->representationArray['columns']);
+                unset($this->representationArray['columns'][$key]);
+                array_filter($this->representationArray['columns']);
+            }
             //if dropdown or checkbox get the label instead of numeric value.
             if ($prop['field_type'] == 'checkbox' || $prop['field_type'] == 'dropdown') {
                 $array[$field] = $this->getValueLabel($el, $prop);
@@ -482,7 +488,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
             $array[$prop['field_label']] = $value;
             $this->representationArray['columns'][] = $prop['field_label'];
         }
-        return $array;
+        return array_filter($array);
     }
 
     private function getValueLabel($value, $prop)
@@ -667,6 +673,6 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
     private function cleanColumns()
     {
-        $this->representationArray['columns'] = array_values(array_unique($this->representationArray['columns']));
+        $this->representationArray['columns'] = array_filter(array_values(array_unique($this->representationArray['columns'])));
     }
 }
