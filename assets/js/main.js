@@ -72,6 +72,7 @@ CorrelatedReportConfig = {
                 $('#report-result').DataTable({
                     dom: 'Bfrtip',
                     data: data,
+                    pageLength: 50,
                     columns: CorrelatedReportConfig.prepareTableHeaders(columns),
                     buttons: [
                         'copy', 'csv', 'excel', 'pdf', 'print'
