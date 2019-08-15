@@ -65,6 +65,20 @@ CorrelatedReportConfig = {
             $("#report-result").html('');
             $(this).addClass('d-none');
         });
+
+        $body = $("body");
+
+        /**
+         * add loader in ajax
+         */
+        $(document).on({
+            ajaxStart: function () {
+                $body.addClass("loading");
+            },
+            ajaxStop: function () {
+                $body.removeClass("loading");
+            }
+        });
     },
     submitReport: function (data) {
         $.ajax({
@@ -153,13 +167,3 @@ CorrelatedReportConfig = {
 CorrelatedReportConfig.init();
 
 CorrelatedReportConfig.datatable = null;
-$body = $("body");
-
-$(document).on({
-    ajaxStart: function () {
-        $body.addClass("loading");
-    },
-    ajaxStop: function () {
-        $body.removeClass("loading");
-    }
-});
