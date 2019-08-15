@@ -424,32 +424,39 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
             foreach ($primaryRecords as $key => $primaryRecord) {
                 //from date identifier we will process query.
                 $date = $primaryRecord[$this->inputs[PRIMARY_INSTRUMENT][DATE_IDENTIFIER]];
+                $this->primaryData[$id]['primary'][$key]['record_id'] = $id;
+                if (isset($this->inputs[SECONDARY_INSTRUMENT])) {
+                    //there might be multiple secondary instruments
+                    foreach ($this->inputs[SECONDARY_INSTRUMENT] as $name => $instrument) {
+                        /**
+                         * now attach resulted array from secondary into the primary one.
+                         */
 
-                //there might be multiple secondary instruments
-                foreach ($this->inputs[SECONDARY_INSTRUMENT] as $name => $instrument) {
-                    /**
-                     * now attach resulted array from secondary into the primary one.
-                     */
-                    $this->primaryData[$id]['primary'][$key]['record_id'] = $id;
-                    $secondary = $this->getSecondaryInstrumentData($date, $instrument, $id);
-                    if (!empty($secondary)) {
-                        //now lets flatten the final row for representation
-                        foreach ($secondary as $row) {
-                            $temp = array_merge($this->primaryData[$id]['primary'][$key], $row);
+                        $secondary = $this->getSecondaryInstrumentData($date, $instrument, $id);
+                        if (!empty($secondary)) {
+                            //now lets flatten the final row for representation
+                            foreach ($secondary as $row) {
+                                $temp = array_merge($this->primaryData[$id]['primary'][$key], $row);
+                                //get columns first so we can delete no needed based on the values.
+                                $this->saveArrayColumns(array_keys($temp));
+                                $this->representationArray['data'][] = $this->flattenArray($temp);
+
+                            }
+                        } else {
                             //get columns first so we can delete no needed based on the values.
-                            $this->saveArrayColumns(array_keys($temp));
-                            $this->representationArray['data'][] = $this->flattenArray($temp);
+                            $this->saveArrayColumns(array_keys($this->primaryData[$id]['primary'][$key]));
+                            //push primary to representation array
+                            $this->representationArray['data'][] = $this->flattenArray($this->primaryData[$id]['primary'][$key]);
 
                         }
-                    } else {
-                        //get columns first so we can delete no needed based on the values.
-                        $this->saveArrayColumns(array_keys($this->primaryData[$id]['primary'][$key]));
-                        //push primary to representation array
-                        $this->representationArray['data'][] = $this->flattenArray($this->primaryData[$id]['primary'][$key]);
 
                     }
-
+                } else {
+                    //get columns first so we can delete no needed based on the values.
+                    $this->saveArrayColumns(array_keys($this->primaryData[$id]['primary'][$key]));
+                    $this->representationArray['data'][] = $this->flattenArray($this->primaryData[$id]['primary'][$key]);
                 }
+
             }
         }
     }
@@ -607,16 +614,9 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
     {
         $this->getPrimaryInstrumentsData();
 
-        if (isset($this->inputs[SECONDARY_INSTRUMENT])) {
-            $this->processSecondaryInstrumentsData();
-            //finally display content
-            $this->displayContent();
-        } else {
-
-            $this->representationArray['data'] = $this->primaryData;
-            //finally display content
-            $this->displayContent();
-        }
+        $this->processSecondaryInstrumentsData();
+        //finally display content
+        $this->displayContent();
     }
 
     /**

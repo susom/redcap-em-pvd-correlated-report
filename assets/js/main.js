@@ -55,6 +55,16 @@ CorrelatedReportConfig = {
             var data = $("#correlated-report").serializeArray();
             CorrelatedReportConfig.submitReport(data);
         });
+
+        /**
+         * Show filters
+         */
+        $("#show-filters").click(function (e) {
+            $("#filters-row").slideDown();
+            CorrelatedReportConfig.datatable.destroy();
+            $("#report-result").html('');
+            $(this).addClass('d-none');
+        });
     },
     submitReport: function (data) {
         $.ajax({
@@ -69,7 +79,8 @@ CorrelatedReportConfig = {
                 var columns = response.columns;
                 columns.defaultContent = '';
                 $("#filters-row").slideUp();
-                $('#report-result').DataTable({
+                $("#show-filters").hide().removeClass('d-none').slideDown();
+                CorrelatedReportConfig.datatable = $('#report-result').DataTable({
                     dom: 'Bfrtip',
                     data: data,
                     pageLength: 50,
@@ -140,3 +151,15 @@ CorrelatedReportConfig = {
 };
 
 CorrelatedReportConfig.init();
+
+CorrelatedReportConfig.datatable = null;
+$body = $("body");
+
+$(document).on({
+    ajaxStart: function () {
+        $body.addClass("loading");
+    },
+    ajaxStop: function () {
+        $body.removeClass("loading");
+    }
+});

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <title>React PHP starter Kit</title>
+    <title>PVD Correlation Report</title>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -47,6 +47,9 @@
     <div class="row p-1">
         <h1>PVD Report</h1>
     </div>
+    <div class="row p-1 d-none" id="show-filters">
+        <button class="btn btn-link collapsed"><h3>Show Filters</h3></button>
+    </div>
     <div id="filters-row" class="row p-1">
         <div class="col-lg-4">
             <?php
@@ -87,7 +90,7 @@
                cellspacing="0" width="100%"></table>
     </div>
 </div>
-
+<div class="loader"><!-- Place at bottom of page --></div>
 <script src="<?php echo $module->getUrl('assets/js/main.js') ?>"></script>
 </body>
 </html>
