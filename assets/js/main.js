@@ -66,6 +66,16 @@ CorrelatedReportConfig = {
             $(this).addClass('d-none');
         });
 
+
+        /**
+         * Delete filter
+         */
+        $(document).on('click', '.delete-criteria', function () {
+            $(this).closest('.list-group-item').remove();
+        });
+
+
+
         $body = $("body");
 
         /**
@@ -160,7 +170,9 @@ CorrelatedReportConfig = {
         });
     },
     appendContactInput: function () {
-        return '<select name="limiter_connector[]"><option value="AND">AND</option><option value="OR">OR</option></select>'
+        return '<select name="limiter_connector[]"><option value="AND">AND</option><option value="OR">OR</option></select><button type="button" class="delete-criteria close" aria-label="Close">\n' +
+            '  <span aria-hidden="true">&times;</span>\n' +
+            '</button>'
     }
 };
 

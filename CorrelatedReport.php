@@ -277,11 +277,10 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         foreach ($this->patientFilter as $name => $field) {
             //if not the first but change name lets close parentheses
             if ($header != '' && $header != $name) {
-                $text .= ") " . $operator;
+                $text .= " " . $operator;
             }
             //now if name changed open parentheses and flag header to be name
             if ($header != $name) {
-                $text .= "(";
                 $header = $name;
             }
             $pointer = 0;
@@ -290,16 +289,15 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 $pointer++;
                 if ($pointer == count($field)) {
                     $operator = $filter['connector'];
-                    $text .= " [$name]" . $this->processFilterOperation($filter['operator'], $filter['value']);
+                    $text .= " [$name] " . $this->processFilterOperation($filter['operator'], $filter['value']);
                 } else {
-                    $text .= " [$name]" . $this->processFilterOperation($filter['operator'],
+                    $text .= " [$name] " . $this->processFilterOperation($filter['operator'],
                             $filter['value']) . ' ' . $filter['connector'];
                 }
             }
         }
 
         //do not forgot close parentheses for last operator
-        $text .= ")";
         $this->setPatientFilterText($text);
     }
 
@@ -389,17 +387,35 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         }
     }
 
+    /**
+     * this function return list of records ids that satisfy the main search criteria.
+     * @return array
+     */
+    private function getSearchCriteriaRecords()
+    {
+        $primary = \REDCap::getRecordIdField();
+        $param = array(
+            'filterLogic' => $this->getPatientFilterText(),
+            'fields' => array($primary),
+            'return_format' => 'array',
+        );
+        return REDCap::getData($param);
+    }
+
     private function getPrimaryInstrumentsData()
     {
 
-        //TODO process filters now we will consider all records
+
+        $searchRecords = $this->getSearchCriteriaRecords();
         $param = array(
-            'filterLogic' => $this->getPatientFilterText(),
             'fields' => $this->inputs[PRIMARY_FIELDS],
             'return_format' => 'array',
         );
         $data = REDCap::getData($param);
-
+        //keep only the records exist on both arrays;
+        if (!empty($searchRecords)) {
+            $data = array_intersect_key($data, $searchRecords);
+        }
 
         foreach ($data as $id => $record) {
             /**
