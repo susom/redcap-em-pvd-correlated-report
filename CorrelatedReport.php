@@ -92,10 +92,11 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         try {
             if (isset($_GET['pid'])) {
                 $this->setProject(new \Project(filter_var($_GET['pid'], FILTER_SANITIZE_NUMBER_INT)));
-            }
-            $this->setEventId($this->getFirstEventId());
+                $this->setEventId($this->getFirstEventId());
 
-            $this->setDataDictionary(REDCap::getDataDictionary($this->getProject()->project_id, 'array'));
+                $this->setDataDictionary(REDCap::getDataDictionary($this->getProject()->project_id, 'array'));
+            }
+
         } catch (\Exception $e) {
             echo $e->getMessage();
         }
