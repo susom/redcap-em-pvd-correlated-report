@@ -19,9 +19,9 @@ use \REDCap;
             /**
              * if not repeated then we do not want it here
              */
-            if (!$module->isRepeatingForm($key)) {
+            /*if (!$module->isRepeatingForm($key)) {
                 continue;
-            }
+            }*/
             ?>
             <option value="<?php echo $key ?>"><?php echo $instrument ?></option>
             <?php
@@ -45,9 +45,9 @@ use \REDCap;
             /**
              * if not repeated then we do not want it here
              */
-            if (!$module->isRepeatingForm($key)) {
-                continue;
-            }
+            /* if (!$module->isRepeatingForm($key)) {
+                 continue;
+             }*/
             ?>
             <tr>
                 <th scope="row"><input type="checkbox" data-key="<?php echo $key ?>" value="<?php echo $key ?>"
