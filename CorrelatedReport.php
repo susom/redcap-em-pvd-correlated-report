@@ -95,6 +95,9 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 $this->setEventId($this->getFirstEventId());
 
                 $this->setDataDictionary(REDCap::getDataDictionary($this->getProject()->project_id, 'array'));
+
+                self::$mainDateField = json_decode($this->getProjectSetting("dates_identifiers"), true);
+
             }
 
         } catch (\Exception $e) {

@@ -45,7 +45,7 @@
            value="<?php echo $module->getUrl("ajax/submit.php") ?>">
     <input type="hidden" name="redcap_csrf_token" id="redcap_csrf_token" value="<?php echo System::getCsrfToken() ?>">
     <div class="row p-1">
-        <h1>PVD Report</h1>
+        <h1>Correlated Procedure Report</h1>
     </div>
     <div class="row p-1 d-none" id="show-filters">
         <button class="btn btn-link collapsed"><h3>Show Filters</h3></button>

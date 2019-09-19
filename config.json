@@ -24,6 +24,12 @@
       "key": "description4",
       "name": "<h6 style='color:red;'><b>Project Debugging Option</b></h6>This will allow for extra debugging statements to be written to the project log files for the whole project - not just one configuration.",
       "type": "descriptive"
+    },
+    {
+      "key": "dates_identifiers",
+      "name": "<b>In JSON format please define date field for each secondary instrument</b><br/>",
+      "required": true,
+      "type": "textarea"
     }
   ]
 }
