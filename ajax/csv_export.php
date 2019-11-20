@@ -2,6 +2,9 @@
 
 namespace Stanford\CorrelatedReport;
 
+ini_set('max_execution_time', 0);
+set_time_limit(0);
+
 /** @var \Stanford\CorrelatedReport\CorrelatedReport $module */
 
 use \REDCap;

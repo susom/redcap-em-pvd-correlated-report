@@ -681,6 +681,8 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         $this->getPrimaryInstrumentsData();
 
         $this->processSecondaryInstrumentsData();
+
+        $this->cleanColumns();
         //finally display content
         $this->downloadCSVFile($this->inputs[PRIMARY_INSTRUMENT]['name'] . '-correlated-report.csv',
             $this->prepareDataForExport());
@@ -688,13 +690,15 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
     private function prepareDataForExport()
     {
-        $result[] = implode(",", $this->representationArray['columns']);
+        //remove duplication
+        $columns = $this->representationArray['columns'];
+        $result[] = implode(",", $columns);
         foreach ($this->representationArray['data'] as $row) {
             //create empty array based on number of columns
-            $temp = array_fill(0, count($this->representationArray['columns']), null);
+            $temp = array_fill(0, count($columns), null);
             foreach ($row as $field => $value) {
                 //search for header index
-                $index = array_search($field, $this->representationArray['columns']);
+                $index = array_search($field, $columns);
 
                 //put the values on correct index to its under correct header
                 $temp[$index] = '"' . $value . '"';
