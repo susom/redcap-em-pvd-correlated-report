@@ -39,14 +39,18 @@
     <input type="hidden" name="report-submit" id="csv-export-url"
            value="<?php echo $module->getUrl("ajax/csv_export.php") ?>">
     <input type="hidden" name="redcap_csrf_token" id="redcap_csrf_token" value="<?php echo System::getCsrfToken() ?>">
+    <input type="hidden" name="inputs-name" id="inputs-name" value="">
     <div class="row p-1">
         <h1>Correlated Procedure Report</h1>
     </div>
-    <div class="row p-1 d-none" id="show-filters">
-        <button class="btn btn-link collapsed"><h3>Show Filters</h3></button>
-        <hr>
-        <button type="button" id="csv-export" class="btn btn-dark">CSV</button>
+    <div id="buttons-area" class="d-none">
+        <div class="row p-1" id="show-filters">
+            <button class="btn btn-link collapsed"><h3>Show Filters</h3></button>
 
+        </div>
+        <div class="row p-1">
+            <button type="button" id="csv-export" class="btn btn-dark">CSV</button>
+        </div>
     </div>
     <div id="filters-row" class="row p-1">
         <div class="col-lg-4">

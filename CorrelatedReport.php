@@ -346,6 +346,11 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         }
     }
 
+    public function setInputFromSession($session)
+    {
+        $this->inputs = $_SESSION[$session];
+    }
+
     public function classifyInputs($type = array())
     {
         if (empty($type)) {
@@ -642,10 +647,31 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         $this->getPrimaryInstrumentsData();
 
         $this->processSecondaryInstrumentsData();
+
+        //
+        $this->cacheInputs();
+
         //finally display content
         $this->displayContent();
     }
 
+    public function generateRandomString($length = 10)
+    {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+        return $randomString;
+    }
+
+    private function cacheInputs()
+    {
+        $string = $this->generateRandomString();
+        $_SESSION[$string] = $this->inputs;
+        $this->representationArray['session'] = $string;
+    }
 
     /**
      * csv export

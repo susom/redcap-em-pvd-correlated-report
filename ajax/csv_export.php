@@ -12,15 +12,7 @@ try {
         throw new \LogicException('You cant be here');
     }
 
-    /**
-     * first make sure all input are clean
-     */
-    $module->sanitizeInputs($_GET);
-
-    /**
-     * organize all inputs into array
-     */
-    $module->classifyInputs($_GET);
+    $module->setInputFromSession(filter_var($_GET['session'], FILTER_SANITIZE_STRING));
 
 
     $module->csvExport();

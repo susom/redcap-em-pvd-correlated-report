@@ -62,7 +62,7 @@ CorrelatedReportConfig = {
          */
         $("#csv-export").click(function (e) {
             e.preventDefault();
-            var link = $("#csv-export-url").val() + "&" + $.param(CorrelatedReportConfig.data);
+            var link = $("#csv-export-url").val() + "&session=" + $("#inputs-name").val();
             window.open(link, '_blank');
         });
         /**
@@ -72,7 +72,7 @@ CorrelatedReportConfig = {
             $("#filters-row").slideDown();
             CorrelatedReportConfig.datatable.destroy();
             $("#report-result").html('');
-            $(this).addClass('d-none');
+            $("#buttons-area").addClass('d-none');
         });
 
 
@@ -110,38 +110,12 @@ CorrelatedReportConfig = {
 
                 var data = response.data;
                 var columns = response.columns;
-                columns.defaultContent = '';
-                $("#filters-row").slideUp();
-                $("#show-filters").hide().removeClass('d-none').slideDown();
-                CorrelatedReportConfig.datatable = $('#report-result').DataTable({
-                    dom: 'Bfrtip',
-                    data: data,
-                    pageLength: 50,
-                    columns: CorrelatedReportConfig.prepareTableHeaders(columns),
-                    buttons: [
-                        'copy', 'csv', 'excel', 'pdf', 'print'
-                    ]
-                });
-            },
-            error: function (request, error) {
-                alert("Request: " + JSON.stringify(request));
-            }
-        });
-    },
-    csvExport: function () {
-        $.ajax({
-            url: $("#csv-export-url").val(),
-            data: CorrelatedReportConfig.data,
-            timeout: 60000000,
-            type: 'POST',
-            dataType: 'json',
-            success: function (response) {
+                //to export large data we saved input into session then pass its name to be used in export
+                $("#inputs-name").val(response.session);
 
-                var data = response.data;
-                var columns = response.columns;
                 columns.defaultContent = '';
                 $("#filters-row").slideUp();
-                $("#show-filters").hide().removeClass('d-none').slideDown();
+                $("#buttons-area").hide().removeClass('d-none').slideDown();
                 CorrelatedReportConfig.datatable = $('#report-result').DataTable({
                     dom: 'Bfrtip',
                     data: data,
