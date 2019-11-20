@@ -1,4 +1,5 @@
 CorrelatedReportConfig = {
+    data: {},
     init: function () {
         /**
          * track drag and drop to append field filter inputs
@@ -52,10 +53,18 @@ CorrelatedReportConfig = {
          */
         $("#correlated-report-submit").click(function (e) {
             e.preventDefault();
-            var data = $("#correlated-report").serializeArray();
-            CorrelatedReportConfig.submitReport(data);
+            CorrelatedReportConfig.data = $("#correlated-report").serializeArray();
+            CorrelatedReportConfig.submitReport();
         });
 
+        /**
+         * export csv
+         */
+        $("#csv-export").click(function (e) {
+            e.preventDefault();
+            var link = $("#csv-export-url").val() + "&" + $.param(CorrelatedReportConfig.data);
+            window.open(link, '_blank');
+        });
         /**
          * Show filters
          */
@@ -90,10 +99,39 @@ CorrelatedReportConfig = {
             }
         });
     },
-    submitReport: function (data) {
+    submitReport: function () {
         $.ajax({
             url: $("#report-submit").val(),
-            data: data,
+            data: CorrelatedReportConfig.data,
+            timeout: 60000000,
+            type: 'POST',
+            dataType: 'json',
+            success: function (response) {
+
+                var data = response.data;
+                var columns = response.columns;
+                columns.defaultContent = '';
+                $("#filters-row").slideUp();
+                $("#show-filters").hide().removeClass('d-none').slideDown();
+                CorrelatedReportConfig.datatable = $('#report-result').DataTable({
+                    dom: 'Bfrtip',
+                    data: data,
+                    pageLength: 50,
+                    columns: CorrelatedReportConfig.prepareTableHeaders(columns),
+                    buttons: [
+                        'copy', 'csv', 'excel', 'pdf', 'print'
+                    ]
+                });
+            },
+            error: function (request, error) {
+                alert("Request: " + JSON.stringify(request));
+            }
+        });
+    },
+    csvExport: function () {
+        $.ajax({
+            url: $("#csv-export-url").val(),
+            data: CorrelatedReportConfig.data,
             timeout: 60000000,
             type: 'POST',
             dataType: 'json',

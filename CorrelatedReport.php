@@ -237,10 +237,13 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         return $this->getProject()->isRepeatingForm($this->getEventId(), $key);
     }
 
-    public function sanitizeInputs()
+    public function sanitizeInputs($type = array())
     {
-        foreach ($_POST as $key => $input) {
-            $_POST[$key] = preg_replace('/[^a-zA-Z0-9\_\=\>\>=\<\<=](.*)$/', '', $_POST[$key]);
+        if (empty($type)) {
+            $type = $_POST;
+        }
+        foreach ($type as $key => $input) {
+            $type[$key] = preg_replace('/[^a-zA-Z0-9\_\=\>\>=\<\<=](.*)$/', '', $type[$key]);
         }
     }
 
@@ -342,9 +345,13 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 throw new \LogicException('Operator not identified');
         }
     }
-    public function classifyInputs()
+
+    public function classifyInputs($type = array())
     {
-        foreach ($_POST as $key => $input) {
+        if (empty($type)) {
+            $type = $_POST;
+        }
+        foreach ($type as $key => $input) {
             if ($key == PRIMARY_INSTRUMENT) {
                 $this->inputs[PRIMARY_INSTRUMENT]['name'] = $input;
                 //load utility for this instrument
@@ -367,8 +374,8 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 }
             } elseif (strpos($key, LIMITER) !== false) {
                 if (empty($this->patientFilter)) {
-                    $this->processPatientFilters($_POST['limiter_name'], $_POST['limiter_operator'],
-                        $_POST['limiter_value'], $_POST['limiter_connector']);
+                    $this->processPatientFilters($type['limiter_name'], $type['limiter_operator'],
+                        $type['limiter_value'], $type['limiter_connector']);
                 } else {
                     continue;
                 }
@@ -385,7 +392,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 }
             } elseif ($key == DATATABLE_PAGE) {
                 $this->setCurrentPageNumber($input);
-            } else {
+            } elseif ($type == $_POST) {
                 throw new \LogicException('cant define input type');
             }
         }
@@ -639,6 +646,49 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         $this->displayContent();
     }
 
+
+    /**
+     * csv export
+     */
+    public function csvExport()
+    {
+        $this->getPrimaryInstrumentsData();
+
+        $this->processSecondaryInstrumentsData();
+        //finally display content
+        $this->downloadCSVFile($this->inputs[PRIMARY_INSTRUMENT]['name'] . '-correlated-report.csv',
+            $this->prepareDataForExport());
+    }
+
+    private function prepareDataForExport()
+    {
+        $result[] = implode(",", $this->representationArray['columns']);
+        foreach ($this->representationArray['data'] as $row) {
+            //create empty array based on number of columns
+            $temp = array_fill(0, count($this->representationArray['columns']), null);
+            foreach ($row as $field => $value) {
+                //search for header index
+                $index = array_search($field, $this->representationArray['columns']);
+
+                //put the values on correct index to its under correct header
+                $temp[$index] = '"' . $value . '"';
+            }
+            //once we are done with filling temp array add it to main result
+            $result[] = implode(",", $temp);
+        }
+        return $result;
+    }
+
+    private function downloadCSVFile($filename, $data)
+    {
+        $data = implode("\n", $data);
+        // Download file and then delete it from the server
+        header('Pragma: anytextexeptno-cache', true);
+        header('Content-Type: application/octet-stream"');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        echo $data;
+        exit();
+    }
     /**
      * compress and display json of  $representationArray
      */
