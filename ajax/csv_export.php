@@ -15,7 +15,7 @@ try {
         throw new \LogicException('You cant be here');
     }
 
-    $module->setInputFromSession(filter_var($_GET['session'], FILTER_SANITIZE_STRING));
+    $module->getCachedResults(filter_var($_GET['session'], FILTER_SANITIZE_STRING));
 
 
     $module->csvExport();

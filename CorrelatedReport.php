@@ -346,9 +346,15 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         }
     }
 
-    public function setInputFromSession($session)
+    public function getCachedResults($session)
     {
-        $this->inputs = $_SESSION[$session];
+        $filename = APP_PATH_TEMP . $session;
+        if (file_exists(strtolower($filename))) {
+            $handle = fopen($filename, 'r');
+            $contents = fread($handle, filesize($filename));
+            fclose($handle);
+            $this->representationArray = unserialize($contents);
+        }
     }
 
     public function classifyInputs($type = array())
@@ -668,9 +674,10 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
     private function cacheInputs()
     {
-        $string = $this->generateRandomString();
-        $_SESSION[$string] = $this->inputs;
-        $this->representationArray['session'] = $string;
+        $string = strtolower($this->generateRandomString());
+        $filename = APP_PATH_TEMP . date("YmdHis") . '_' . $string . '_correlated_report' . '.csv';
+        file_put_contents($filename, serialize($this->representationArray));
+        $this->representationArray['session'] = date("YmdHis") . '_' . $string . '_correlated_report' . '.csv';
     }
 
     /**
@@ -678,13 +685,9 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
      */
     public function csvExport()
     {
-        $this->getPrimaryInstrumentsData();
-
-        $this->processSecondaryInstrumentsData();
-
         $this->cleanColumns();
         //finally display content
-        $this->downloadCSVFile($this->inputs[PRIMARY_INSTRUMENT]['name'] . '-correlated-report.csv',
+        $this->downloadCSVFile('correlated-report.csv',
             $this->prepareDataForExport());
     }
 
