@@ -346,6 +346,10 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         }
     }
 
+    /**
+     * load temp csv file of the generated report
+     * @param string $session
+     */
     public function getCachedResults($session)
     {
         $filename = APP_PATH_TEMP . $session;
@@ -357,6 +361,10 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         }
     }
 
+    /**
+     * parse POST variables and categorize them to primary, secondary, or field
+     * @param array $type
+     */
     public function classifyInputs($type = array())
     {
         if (empty($type)) {
@@ -655,7 +663,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         $this->processSecondaryInstrumentsData();
 
         //
-        $this->cacheInputs();
+        $this->cacheReport();
 
         //finally display content
         $this->displayContent();
@@ -672,7 +680,10 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         return $randomString;
     }
 
-    private function cacheInputs()
+    /**
+     * this function will save generated report into temp csv file that will be cleaned by REDCap in 12 minutes.
+     */
+    private function cacheReport()
     {
         $string = strtolower($this->generateRandomString());
         $filename = APP_PATH_TEMP . date("YmdHis") . '_' . $string . '_correlated_report' . '.csv';
@@ -691,6 +702,10 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
             $this->prepareDataForExport());
     }
 
+    /**
+     * loop over representationArray to get records into text rows
+     * @return array
+     */
     private function prepareDataForExport()
     {
         //remove duplication
@@ -750,17 +765,6 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         header('Vary: Accept-Encoding');
         echo $output;
         ob_end_flush();
-    }
-
-    /**
-     * split data array based on requested page.
-     */
-    private function paginateContent()
-    {
-        if (count($this->representationArray['data']) > ROWS_PER_CALL) {
-            $this->representationArray['data'] = array_slice($this->representationArray['data'],
-                (int)($this->getCurrentPageNumber() - 1) * ROWS_PER_CALL, ROWS_PER_CALL, true);
-        }
     }
 
 
