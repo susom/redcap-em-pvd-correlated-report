@@ -634,7 +634,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 'return_format' => 'array',
             );
             $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'] = REDCap::getData($param);
-            $this->emLog("Secondary Data for " . SECONDARY_INSTRUMENT,
+            $this->emDebug("Secondary Data for " . SECONDARY_INSTRUMENT,
                 $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']);
         }
 
@@ -660,7 +660,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                             $end = strtotime($filter['end']) - strtotime($record[$dateField]);
 
                             $temp[min($start, $end)] = $record;
-                            $this->emLog("Temp array ", $temp);
+                            $this->emDebug("Temp array ", $temp);
                         }
                     }
                 } else {
