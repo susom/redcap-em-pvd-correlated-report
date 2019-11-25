@@ -68,17 +68,25 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
      * Map for main instrument date field
      * @var array
      */
-    private static $mainDateField = array(
+    public static $mainDateField = array(
         'echo' => 'echodate_echo',
         'ctangio' => 'ctangiodate_ctangio',
         'hosper' => 'hosperdate_hosper',
         'mri' => 'mridate_mri',
-        'ptf' => 'pftdate_pft',
+        'pft' => 'pftdate_pft',
         'rhcath' => 'rhcathdate_rhcath',
         'laboratorydata' => 'labdate_laboratorydata',
         'sleepstudy' => 'sleepdate_sleepstudy',
         'walk' => 'walkdataentry_walk',
         'vqscan' => 'vqscandate_vqscan',
+        'visit' => 'visitdate_visit',
+        'whodx' => 'visitdate_whodx',
+        'workingdx' => 'visitdate_workingdx',
+        'specificmed' => 'visitdate_specificmed',
+        //Latestdiagnosis has no DATE TODO Ask Susan about that
+        //Socialhx has no DATE TODO Ask Susan about that
+        'priorsurgery' => 'surgerydate_priorsurgery'
+
     );
 
 
@@ -96,7 +104,11 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
                 $this->setDataDictionary(REDCap::getDataDictionary($this->getProject()->project_id, 'array'));
 
-                self::$mainDateField = json_decode($this->getProjectSetting("dates_identifiers"), true);
+                $temp = json_decode($this->getProjectSetting("dates_identifiers"), true);
+                if (!empty($temp)) {
+                    self::$mainDateField = $temp;
+                }
+
 
             }
 
@@ -249,14 +261,25 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
     private function defineSecondaryInstrument($input)
     {
-        if (!isset($this->inputs[SECONDARY_INSTRUMENT][$input]['name'])) {
-            $this->inputs[SECONDARY_INSTRUMENT][$input]['name'] = $input;
-            //load utility for this instrument
-            $this->inputs[SECONDARY_INSTRUMENT][$input][REPEATING_UTILITY] = new RepeatingForms($this->getProject()->project_id,
-                $input);
+        if (is_array($input)) {
+            foreach ($input as $value) {
+                if (!isset($this->inputs[SECONDARY_INSTRUMENT][$value]['name'])) {
+                    $this->inputs[SECONDARY_INSTRUMENT][$value]['name'] = $value;
 
-            //also define main date field for secondary instrument
-            $this->inputs[SECONDARY_INSTRUMENT][$input][DATE_IDENTIFIER] = self::$mainDateField[$input];
+                    //also define main date field for secondary instrument
+                    $this->inputs[SECONDARY_INSTRUMENT][$value][DATE_IDENTIFIER] = self::$mainDateField[$value];
+                }
+            }
+        } else {
+            if (!isset($this->inputs[SECONDARY_INSTRUMENT][$input]['name'])) {
+                $this->inputs[SECONDARY_INSTRUMENT][$input]['name'] = $input;
+                //load utility for this instrument
+                $this->inputs[SECONDARY_INSTRUMENT][$input][REPEATING_UTILITY] = new RepeatingForms($this->getProject()->project_id,
+                    $input);
+
+                //also define main date field for secondary instrument
+                $this->inputs[SECONDARY_INSTRUMENT][$input][DATE_IDENTIFIER] = self::$mainDateField[$input];
+            }
         }
     }
 
@@ -610,18 +633,45 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
             $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'] = REDCap::getData($param);
         }
 
+        $temp = array();
         $result = array();
         $timeFilters = $this->processSecondaryTimeFilter($date, $instrument);
-        //get from secondary the records for id we passed
-        $records = $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId]['repeat_instances'][$this->getFirstEventId()][$instrument['name']];
+        //if repeating instrument
+        if (array_key_exists('repeat_instances',
+            $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId])) {
+            //get from secondary the records for id we passed
+            $records = $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId]['repeat_instances'][$this->getFirstEventId()][$instrument['name']];
 
-        foreach ($records as $record) {
-            //now loop over before/after time filters for secondary records
-            foreach ($timeFilters as $filter) {
-                if (strtotime($record[$dateField]) >= strtotime($filter['start']) && strtotime($record[$dateField]) <= strtotime($filter['end'])) {
-                    $result[] = $record;
+            foreach ($records as $record) {
+                if ($timeFilters) {
+                    //now loop over before/after time filters for secondary records
+                    foreach ($timeFilters as $filter) {
+                        // if secondary report within the range on the primary record.
+                        if (strtotime($record[$dateField]) >= strtotime($filter['start']) && strtotime($record[$dateField]) <= strtotime($filter['end'])) {
+                            // if within the range compare with
+
+                            //
+                            $start = strtotime($record[$dateField]) - strtotime($filter['start']);
+                            $end = strtotime($filter['end']) - strtotime($record[$dateField]);
+
+                            $temp[min($start, $end)] = $record;
+                        }
+                    }
+                } else {
+                    // if no time define just add record to the result
+                    $temp[] = $record;
                 }
+
             }
+        } elseif (array_key_exists($recordId, $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'])) {
+            //get from secondary the records for id we passed
+            $result[] = $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId][$this->getFirstEventId()];
+        }
+
+        // if multiple secondary records exist get the closest one to primary based on the array keys and return that.
+        if (!empty($temp)) {
+            $xxxxx = array_pop(array_keys($temp, min($temp)));
+            $result[] = $temp[array_pop(array_keys($temp, min($temp)))];
         }
         return $result;
     }

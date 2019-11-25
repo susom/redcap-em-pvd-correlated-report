@@ -45,19 +45,33 @@ use \REDCap;
             /**
              * if not repeated then we do not want it here
              */
-            /* if (!$module->isRepeatingForm($key)) {
-                 continue;
-             }*/
+            $repeating = $module->isRepeatingForm($key);
             ?>
             <tr>
                 <th scope="row"><input type="checkbox" data-key="<?php echo $key ?>" value="<?php echo $key ?>"
                                        class="secondary-instrument" name="secondary-instrument[]"></th>
                 <td><?php echo $instrument ?></td>
                 <td>
-                    <input type="text" name="closest-after-<?php echo $key ?>" id="closest-after-<?php echo $key ?>"/>
+                    <?php
+                    // only show closest input to repeating instruments.
+                    if ($repeating) {
+
+                        ?>
+                        <input type="text" name="closest-after-<?php echo $key ?>"
+                               id="closest-after-<?php echo $key ?>"/>
+                        <?php
+                    }
+                    ?>
                 </td>
                 <td>
-                    <input type="text" name="closest-before-<?php echo $key ?>" id="closest-before-<?php echo $key ?>"/>
+                    <?php
+                    if ($repeating) {
+
+                        ?>
+                        <input type="text" name="closest-before-<?php echo $key ?>" id="closest-before-<?php echo $key ?>"/>
+                        <?php
+                    }
+                    ?>
                 </td>
             </tr>
             <?php
