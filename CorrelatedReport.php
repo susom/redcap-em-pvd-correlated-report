@@ -634,7 +634,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 'return_format' => 'array',
             );
             $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'] = REDCap::getData($param);
-            $this->emDebug($this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']);
+            $this->emDebug(count($this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']));
         }
 
         $temp = array();
@@ -647,9 +647,12 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
             $records = $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId]['repeat_instances'][$this->getFirstEventId()][$instrument['name']];
 
             foreach ($records as $record) {
+                $this->emDebug($record);
                 if ($timeFilters) {
+                    $this->emDebug($timeFilters);
                     //now loop over before/after time filters for secondary records
                     foreach ($timeFilters as $filter) {
+                        $this->emDebug(strtotime($record[$dateField]) >= strtotime($filter['start']) && strtotime($record[$dateField]) <= strtotime($filter['end']));
                         // if secondary report within the range on the primary record.
                         if (strtotime($record[$dateField]) >= strtotime($filter['start']) && strtotime($record[$dateField]) <= strtotime($filter['end'])) {
                             // if within the range compare with
