@@ -634,28 +634,22 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 'return_format' => 'array',
             );
             $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'] = REDCap::getData($param);
-            $this->emDebug("Count : " . count($this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']));
+            $this->emDebug(count($this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']));
         }
 
         $temp = array();
         $result = array();
         $timeFilters = $this->processSecondaryTimeFilter($date, $instrument);
         //if repeating instrument
-        $this->emDebug("Repeat Instance Exists : " . array_key_exists('repeat_instances',
-                $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId]));
         if (array_key_exists('repeat_instances',
             $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId])) {
             //get from secondary the records for id we passed
             $records = $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId]['repeat_instances'][$this->getFirstEventId()][$instrument['name']];
-            $this->emDebug("Records");
-            $this->emDebug($records);
             foreach ($records as $record) {
-                $this->emDebug($record);
                 if ($timeFilters) {
-                    $this->emDebug($timeFilters);
+
                     //now loop over before/after time filters for secondary records
                     foreach ($timeFilters as $filter) {
-                        $this->emDebug(strtotime($record[$dateField]) >= strtotime($filter['start']) && strtotime($record[$dateField]) <= strtotime($filter['end']));
                         // if secondary report within the range on the primary record.
                         if (strtotime($record[$dateField]) >= strtotime($filter['start']) && strtotime($record[$dateField]) <= strtotime($filter['end'])) {
                             // if within the range compare with
@@ -665,7 +659,6 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                             $end = strtotime($filter['end']) - strtotime($record[$dateField]);
 
                             $temp[min($start, $end)] = $record;
-                            $this->emDebug($temp);
                         }
                     }
                 } else {
@@ -681,6 +674,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
         // if multiple secondary records exist get the closest one to primary based on the array keys and return that.
         if (!empty($temp)) {
+            $this->emDebug($temp);
             $result[] = $temp[array_pop(array_keys($temp, min($temp)))];
         }
         return $result;
