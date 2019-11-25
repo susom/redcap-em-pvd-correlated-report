@@ -3,9 +3,11 @@
 // Set the namespace defined in your config file
 namespace Stanford\CorrelatedReport;
 
+include_once "emLoggerTrait.php";
 ini_set('max_execution_time', 0);
 set_time_limit(0);
 require_once(__DIR__ . "/utilities/RepeatingForms.php");
+
 
 use REDCap;
 use \Stanford\Utilities\RepeatingForms;
@@ -43,6 +45,7 @@ define('DATE_IDENTIFIER', 'date_identifier');
  */
 class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 {
+    use emLoggerTrait;
 
     private $project;
 
@@ -631,6 +634,8 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 'return_format' => 'array',
             );
             $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'] = REDCap::getData($param);
+            $this->emLog("Secondary Data for " . SECONDARY_INSTRUMENT,
+                $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']);
         }
 
         $temp = array();
@@ -655,6 +660,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                             $end = strtotime($filter['end']) - strtotime($record[$dateField]);
 
                             $temp[min($start, $end)] = $record;
+                            $this->emLog("Temp array ", $temp);
                         }
                     }
                 } else {
@@ -670,7 +676,6 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
         // if multiple secondary records exist get the closest one to primary based on the array keys and return that.
         if (!empty($temp)) {
-            $xxxxx = array_pop(array_keys($temp, min($temp)));
             $result[] = $temp[array_pop(array_keys($temp, min($temp)))];
         }
         return $result;
