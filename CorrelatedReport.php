@@ -674,7 +674,6 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
         // if multiple secondary records exist get the closest one to primary based on the array keys and return that.
         if (!empty($temp)) {
-            $this->emDebug($temp);
             $result[] = $temp[array_pop(array_keys($temp, min($temp)))];
         }
         return $result;
