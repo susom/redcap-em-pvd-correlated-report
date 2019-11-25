@@ -634,7 +634,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 'return_format' => 'array',
             );
             $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'] = REDCap::getData($param);
-            $this->emDebug(count($this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']));
+            $this->emLog(count($this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']));
         }
 
         $temp = array();
@@ -674,6 +674,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
         // if multiple secondary records exist get the closest one to primary based on the array keys and return that.
         if (!empty($temp)) {
+            $this->emLog($temp);
             $result[] = $temp[array_pop(array_keys($temp, min($temp)))];
         }
         return $result;
