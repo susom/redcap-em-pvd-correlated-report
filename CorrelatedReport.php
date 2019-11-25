@@ -634,18 +634,21 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 'return_format' => 'array',
             );
             $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'] = REDCap::getData($param);
-            $this->emDebug(count($this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']));
+            $this->emDebug("Count : " . count($this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']));
         }
 
         $temp = array();
         $result = array();
         $timeFilters = $this->processSecondaryTimeFilter($date, $instrument);
         //if repeating instrument
+        $this->emDebug("Repeat Instance Exists : " . array_key_exists('repeat_instances',
+                $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId]));
         if (array_key_exists('repeat_instances',
             $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId])) {
             //get from secondary the records for id we passed
             $records = $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'][$recordId]['repeat_instances'][$this->getFirstEventId()][$instrument['name']];
-
+            $this->emDebug("Records");
+            $this->emDebug($records);
             foreach ($records as $record) {
                 $this->emDebug($record);
                 if ($timeFilters) {
