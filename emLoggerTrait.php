@@ -44,7 +44,7 @@ trait emLoggerTrait
 
     // Determine if emLogger is enabled on this server
     private $emLoggerEnabled = null;
-    private $emLoggerDebugMode = null;
+    private $emLoggerDebugMode = true;
 
     /**
      * Obtain an instance of emLogger or false if not installed / active
