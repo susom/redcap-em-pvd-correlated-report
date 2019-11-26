@@ -80,7 +80,7 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         'rhcath' => 'rhcathdate_rhcath',
         'laboratorydata' => 'labdate_laboratorydata',
         'sleepstudy' => 'sleepdate_sleepstudy',
-        'walk' => 'walkdataentry_walk',
+        'walk' => 'walkdate_walk',
         'vqscan' => 'vqscandate_vqscan',
         'visit' => 'visitdate_visit',
         'whodx' => 'visitdate_whodx',

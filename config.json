@@ -30,6 +30,12 @@
       "name": "<b>In JSON format please define date field for each secondary instrument</b><br/>",
       "required": true,
       "type": "textarea"
+    },
+    {
+      "key": "enable-project-debug-logging",
+      "name": "<b>Enable Debug Logging</b><br>If you have the Stanford emLogger external module installed and configured, you can enable additional debug-level logging for this project",
+      "required": false,
+      "type": "checkbox"
     }
   ]
 }
