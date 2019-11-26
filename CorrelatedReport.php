@@ -634,7 +634,6 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 'return_format' => 'array',
             );
             $this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data'] = REDCap::getData($param);
-            $this->emLog(count($this->inputs[SECONDARY_INSTRUMENT][$instrument['name']]['data']));
         }
 
         $temp = array();
