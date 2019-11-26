@@ -511,7 +511,15 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                                 $temp = array_merge($this->primaryData[$id]['primary'][$key], $row);
                                 //get columns first so we can delete no needed based on the values.
                                 $this->saveArrayColumns(array_keys($temp));
-                                $this->representationArray['data'][] = $this->flattenArray($temp);
+
+                                //if  secondary instrument is not repeating EG patiendata then make it part of the primary data so it will show up in every row and do not save it to represented data
+                                if (!$this->isRepeatingForm($name)) {
+                                    $this->primaryData[$id]['primary'][$key] = $temp;
+                                } else {
+                                    $this->representationArray['data'][] = $this->flattenArray($temp);
+                                }
+
+
 
                             }
                         } else {
