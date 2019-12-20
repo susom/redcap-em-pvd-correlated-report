@@ -577,11 +577,11 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                         if (!empty($secondary)) {
                             //now lets flatten the final row for representation
                             foreach ($secondary as $row) {
-                                if ($this->isMainInstrument($instrument)) {
-                                    $mainField = $this->getMergeInstrumentField($instrument);
+                                if ($this->isMainInstrument($instrument['name'])) {
+                                    $mainField = $this->getMergeInstrumentField($instrument['name']);
                                     $temp = $row;
                                     $temp = array_merge($temp,
-                                        $this->getMergedRecordDataForID($id, $row[$mainField], $instrument));
+                                        $this->getMergedRecordDataForID($id, $row[$mainField], $instrument['name']));
                                     $row = $temp;
                                 }
                                 $temp = array_merge($this->primaryData[$id]['primary'][$key], $row);
