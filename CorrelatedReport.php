@@ -14,6 +14,7 @@ use \Stanford\Utilities\RepeatingForms;
 
 define('PRIMARY_INSTRUMENT', 'primary-instrument');
 define('SECONDARY_INSTRUMENT', 'secondary-instrument');
+define('MERGED_INSTRUMENT', 'merged-instrument');
 define('DATATABLE_PAGE', 'datatable-page');
 define('CLOSEST', 'closest');
 define('FIELD', 'field');
@@ -42,6 +43,7 @@ define('DATE_IDENTIFIER', 'date_identifier');
  * @property string $patientFilterText
  * @property int $currentPageNumber
  * @property array $dataDictionary
+ * @property array $mergedInstrument
  */
 class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 {
@@ -67,6 +69,8 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
     private $currentPageNumber;
 
     private $dataDictionary = array();
+
+    private $mergedInstrument = array();
     /**
      * Map for main instrument date field
      * @var array
@@ -480,6 +484,15 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
             if (!isset($record['repeat_instances'])) {
                 continue;
             } else {
+                if ($this->isMainInstrument($this->inputs[PRIMARY_INSTRUMENT]['name'])) {
+                    $mainField = $this->getMergeInstrumentField($this->inputs[PRIMARY_INSTRUMENT]['name']);
+                    foreach ($record['repeat_instances'][$this->getProject()->firstEventId][$this->inputs[PRIMARY_INSTRUMENT]['name']] as $k => $r) {
+                        $temp = $r;
+                        $temp = array_merge($temp, $this->getMergedRecordDataForID($id, $r[$mainField],
+                            $this->inputs[PRIMARY_INSTRUMENT]['name']));
+                        $record['repeat_instances'][$this->getProject()->firstEventId][$this->inputs[PRIMARY_INSTRUMENT]['name']][$k] = $temp;
+                    }
+                }
                 $this->primaryData[$id]['primary'] = $record['repeat_instances'][$this->getProject()->firstEventId][$this->inputs[PRIMARY_INSTRUMENT]['name']];
 
                 //TODO add demographic data to the array
@@ -488,6 +501,62 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         }
     }
 
+    private function getMergedRecordDataForID($recordId, $mainValue, $instrument)
+    {
+        $result = array();
+        foreach ($this->inputs[MERGED_INSTRUMENT][$instrument] as $subInstrument => $value) {
+            if (isset($value['data'][$recordId])) {
+                $secondaryField = $this->getMergeInstrumentField($subInstrument, false);
+                foreach ($value['data'][$recordId] as $record) {
+                    foreach ($record[$this->getProject()->firstEventId][$subInstrument] as $k => $r) {
+                        if ($r[$secondaryField] == $mainValue) {
+                            $result[$subInstrument] .= implode('-', $r);
+                        }
+                    }
+
+                }
+            }
+        }
+        return $result;
+    }
+
+    private function getMergeInstrumentField($instrument, $main = true)
+    {
+        if ($main) {
+            foreach ($this->mergedInstrument as $record) {
+                if ($record['main-instrument'] == $instrument) {
+                    return $record['main-instrument-field'];
+                }
+            }
+        } else {
+            foreach ($this->mergedInstrument as $record) {
+                foreach ($record[$record['main-instrument']] as $subRecord) {
+                    if ($subRecord['secondary-instrument'] == $instrument) {
+                        return $subRecord['secondary-instrument-field'];
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * check if instrument has configured instrument to be attache to it
+     * @param $instrument
+     * @return bool
+     */
+    private function isMainInstrument($instrument)
+    {
+        if (empty($this->mergedInstrument)) {
+            return false;
+        }
+        foreach ($this->mergedInstrument as $value) {
+            if ($value['main-instrument'] == $instrument) {
+                return true;
+            }
+        }
+        return false;
+    }
     private function processSecondaryInstrumentsData()
     {
         foreach ($this->primaryData as $id => $record) {
@@ -508,6 +577,13 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                         if (!empty($secondary)) {
                             //now lets flatten the final row for representation
                             foreach ($secondary as $row) {
+                                if ($this->isMainInstrument($instrument)) {
+                                    $mainField = $this->getMergeInstrumentField($instrument);
+                                    $temp = $row;
+                                    $temp = array_merge($temp,
+                                        $this->getMergedRecordDataForID($id, $row[$mainField], $instrument));
+                                    $row = $temp;
+                                }
                                 $temp = array_merge($this->primaryData[$id]['primary'][$key], $row);
                                 //get columns first so we can delete no needed based on the values.
                                 $this->saveArrayColumns(array_keys($temp));
@@ -540,7 +616,8 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
             //if not defined in data dictionary then do not display it.
             if (is_null($prop)) {
-                unset($array[$field]);
+                //unset($array[$field]);
+                $prop['field_label'] = $field;
             }
 
             if (is_null($el) || $field == '') {
@@ -699,12 +776,41 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
         return $result;
     }
 
+    private function getMergedInstrumentsData()
+    {
+        $instances = $this->prepareMergedInstrumentsSettings();
+        foreach ($instances as $instance) {
+
+            // get the data for merged instrument assigned to main one.
+            foreach ($instance[$instance['main-instrument']] as $subInstance) {
+                if (!isset($this->inputs[MERGED_INSTRUMENT][$instance['main-instrument']][$subInstance['secondary-instrument']]['data'])) {
+                    $param = array(
+                        //'filterLogic' => $this->getPatientFilterText(),
+                        'fields' => REDCap::getFieldNames($subInstance['secondary-instrument']),
+                        'exportAsLabels' => true,
+                        'return_format' => 'array',
+                    );
+
+                    $this->inputs[MERGED_INSTRUMENT][$instance['main-instrument']][$subInstance['secondary-instrument']]['data'] = REDCap::getData($param);
+                }
+            }
+
+        }
+    }
 
     /**
      * process primary and secondary instruments
      */
     public function generateReport()
     {
+
+        /**
+         * this will check if we want to merge other records from other instruments
+         */
+        if ($this->getProjectSetting('allow-merged-instruments')) {
+            $this->getMergedInstrumentsData();
+        }
+
         $this->getPrimaryInstrumentsData();
 
         $this->processSecondaryInstrumentsData();
@@ -828,5 +934,31 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
     private function cleanColumns()
     {
         $this->representationArray['columns'] = array_filter(array_values(array_unique($this->representationArray['columns'])));
+    }
+
+    /**
+     *
+     * override main method to get sub-sub_instance!!!
+     * @param $key
+     * @param null $pid
+     * @return array
+     */
+    function prepareMergedInstrumentsSettings()
+    {
+        $rawSettings = $this->getProjectSettings($this->getProjectId());
+        foreach ($rawSettings['instance']['value'] as $key => $value) {
+            $this->mergedInstrument[$key] = array(
+                'main-instrument' => $rawSettings['main-instrument']['value'][$key],
+                'main-instrument-field' => $rawSettings['main-instrument-field']['value'][$key]
+            );
+            foreach ($rawSettings['sub_instance']['value'][$key] as $mkey => $mvalue) {
+                $this->mergedInstrument[$key][$rawSettings['main-instrument']['value'][$key]][] = array(
+                    'secondary-instrument' => $rawSettings['secondary-instrument']['value'][$key][$mkey],
+                    'secondary-instrument-field' => $rawSettings['secondary-instrument-field']['value'][$key][$mkey]
+                );
+            }
+
+        }
+        return $this->mergedInstrument;
     }
 }
