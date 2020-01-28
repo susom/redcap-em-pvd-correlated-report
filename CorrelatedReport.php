@@ -510,6 +510,8 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 foreach ($value['data'][$recordId] as $record) {
                     foreach ($record[$this->getProject()->firstEventId][$subInstrument] as $k => $r) {
                         if ($r[$secondaryField] == $mainValue) {
+                            # remove the secondary field because its redundant in the view.
+                            unset($r[$secondaryField]);
                             $result[$subInstrument] .= implode('-', $r);
                         }
                     }
