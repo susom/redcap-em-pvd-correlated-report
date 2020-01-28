@@ -512,6 +512,28 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                         if ($r[$secondaryField] == $mainValue) {
                             # remove the secondary field because its redundant in the view.
                             unset($r[$secondaryField]);
+                            foreach ($r as $k => $v) {
+
+                                # if the field is REDCap complete auto-generated field then ignore it
+                                if ($this->endsWith($k, '_complete')) {
+                                    unset($r[$k]);
+                                    continue;
+                                }
+
+                                //check if element type from DataDictionary is checkbox or dropdown then get value label instead
+                                $prop = $this->getDataDictionaryProp($k);
+
+                                //if not defined in data dictionary then do not display it.
+                                if (is_null($prop)) {
+                                    //unset($array[$field]);
+                                    $prop['field_label'] = $k;
+                                }
+
+                                //if dropdown or checkbox get the label instead of numeric value.
+                                if ($prop['field_type'] == 'checkbox' || $prop['field_type'] == 'dropdown') {
+                                    $r[$k] = $this->getValueLabel($v, $prop);
+                                }
+                            }
                             $result[$subInstrument] .= implode('-', $r);
                         }
                     }
@@ -792,7 +814,6 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                         'exportAsLabels' => true,
                         'return_format' => 'array',
                     );
-
                     $this->inputs[MERGED_INSTRUMENT][$instance['main-instrument']][$subInstance['secondary-instrument']]['data'] = REDCap::getData($param);
                 }
             }
@@ -962,5 +983,15 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
 
         }
         return $this->mergedInstrument;
+    }
+
+    private function endsWith($haystack, $needle)
+    {
+        $length = strlen($needle);
+        if ($length == 0) {
+            return true;
+        }
+
+        return (substr($haystack, -$length) === $needle);
     }
 }
