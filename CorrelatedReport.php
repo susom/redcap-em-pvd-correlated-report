@@ -432,12 +432,12 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 //remove the last part of string
                 $key = str_replace("_" . FIELD, '', $key);
                 //now decide if input is for primary or secondary instrument
-                if (strpos($key, $this->inputs[PRIMARY_INSTRUMENT]['name']) !== false) {
+                if ($this->isFieldInPrimaryInstrument($key)) {
                     $this->inputs[PRIMARY_FIELDS][$key] = $key;
                 } else {
                     //lets group fields based on the the instrument they below to.
-                    $instrumentName = explode('_', $key);
-                    $this->inputs[SECONDARY_FIELDS][end($instrumentName)][] = $key;
+                    $instrumentName = $this->getFieldInstrument($key);
+                    $this->inputs[SECONDARY_FIELDS][$instrumentName][] = $key;
                 }
             } elseif ($key == DATATABLE_PAGE) {
                 $this->setCurrentPageNumber($input);
@@ -445,6 +445,27 @@ class CorrelatedReport extends \ExternalModules\AbstractExternalModule
                 throw new \LogicException('cant define input type');
             }
         }
+    }
+
+    private function getFieldInstrument($field)
+    {
+        return $this->getProject()->metadata[$field]['form_name'];
+    }
+
+    private function isFieldInPrimaryInstrument($field)
+    {
+        if ($this->getProject()->metadata[$field]['form_name'] == $this->inputs[PRIMARY_INSTRUMENT]['name']) {
+            return true;
+        }
+        return false;
+    }
+
+    private function isFieldInSecondaryInstrument($field)
+    {
+        if ($this->getProject()->metadata[$field]['form_name'] == $this->inputs[SECONDARY_INSTRUMENT]['name']) {
+            return true;
+        }
+        return false;
     }
 
     /**
